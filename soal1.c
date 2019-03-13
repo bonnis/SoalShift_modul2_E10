@@ -72,7 +72,7 @@ int main() {
                 memset(old,0,sizeof old);
                 memset(new,0,sizeof new);
                 strcpy(old,ent->d_name);
-                ptr = strstr(old,".png");
+                ptr = strstr(&old[strlen(old)-5],".png");
                 if (ptr != NULL) {
                     strncpy(new,old,(strlen(old)-4));
                     strcat(new,"_grey.png");
