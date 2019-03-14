@@ -76,11 +76,13 @@ int main()
     }
     
     //Loop
+    DIR* rek;
     int i=1;
     while(1) 
     {
+        rek = opendir(dir);
         //Membuat folder baru jika lebih dari 30 menit atau folder hilang
-        if(i>=31 || !(opendir(dir)))
+        if(i>=31 || !rek)
         {
             i=1;
             t=time(NULL);
@@ -105,6 +107,7 @@ int main()
             strcat(dir,log);
             execlp("cp", "cp", "/var/log/syslog", dir, NULL);
         }
+        closedir(rek);
         i++;
 
         sleep(60);
