@@ -40,7 +40,7 @@ int main(){
         char buffer[100];
         while(fgets(buffer,sizeof(buffer),pipa)!=NULL)
         {
-            if(strstr(&buffer[strlen(buffer)-5],".txt")!=NULL)
+            if(strcmp(&buffer[strlen(buffer)-4],".txt")==0)
             {
                 fprintf(berkas,"%s",buffer);
             }

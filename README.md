@@ -1,5 +1,5 @@
 # Laporan Soal Shift Modul 2
-Laporan pengerjaan soal shift modul kedua
+Laporan pengerjaan soal shift modul kedua  
 Kelas Sistem Operasi E Jurusan Informatika Institut Teknologi Sepuluh Nopember  
 Oleh Kelompok E10
 
@@ -10,13 +10,13 @@ Oleh Kelompok E10
 Elen mempunyai pekerjaan pada studio sebagai fotografer. Suatu hari ada seorang klien yang bernama Kusuma yang meminta untuk mengubah nama file yang memiliki ekstensi .png menjadi “\[namafile]_grey.png”. Karena jumlah file yang diberikan Kusuma tidak manusiawi, maka Elen meminta bantuan kalian untuk membuat suatu program C yang dapat mengubah nama secara otomatis dan diletakkan pada direktori /home/\[user]/modul2/gambar.  
 Catatan : Tidak boleh menggunakan crontab.
 ### Jawab
-Karena diminta untuk membuat program yang "otomatis" maka langkah pertama adalah membuat daemon dengan melakukan fork lalu me-kill parent process. Program lalu menjalankan perintah-perintah untuk menyelesaikan persoalan diatas, program kami sendiri melakukan hal ini 15 detik sekali. langkah-langkah berikutnya akan dilakukan di dalam loop daemon.
+Karena diminta untuk membuat program yang "otomatis" maka langkah pertama adalah membuat daemon dengan melakukan fork lalu me-kill parent process. Program lalu menjalankan perintah-perintah untuk menyelesaikan persoalan diatas, program kami sendiri melakukan hal ini 15 detik sekali. 
 
 Langkah kedua adalah dengan mengecek apakah direktori /home/\[user]/modul2/gambar ada atau tidak dengan menggunakan opendir().
 ```c
 DIR* dir = opendir("/home/bonnis/modul2/gambar");
 ```
-Variabel dir tidak akan bernilai *NULL* jika foldernya telah dibuat. Jika folder belum dibuat, maka akan dibuatkan folder dengan menggunakan mkdir, jika tidak perlu maka proses tersebut dilewati.
+Variabel dir tidak akan bernilai *NULL* jika foldernya telah dibuat. Jika folder belum dibuat, maka akan dibuatkan folder dengan menggunakan mkdir, jika tidak perlu maka proses tersebut dilewati. langkah-langkah berikutnya akan dilakukan di dalam loop daemon.
 
 Langkah ketiga adalah mencari setiap file yang berformat *.png* lalu merenamenya dengan tambahan *_grey.png* di belakangnya. hal pertama yang dilakukan adalah mendapatkan nama tiap file di folder yang ada, hal ini dilakukan dengan menggunakan fungsi *readdir()*.
 ```c
@@ -78,6 +78,67 @@ Catatan:
 Pastikan file daftar.txt dapat diakses dari text editor
 
 ### Jawab
+Langkah pertama untuk meyelesaikann soal ini adalah dengan melakukan ekstraksi terhadap file "campur2.zip" hal ini dilakukan dengan melakukan fork lalu membuat child process menmanggil exec untuk menjalakan program unzip.
+```c
+...
+child_id = fork();
+if(child_id == 0)
+{
+    char *argv[3]={"unzip","campur2.zip",NULL};
+    execv("/usr/bin/unzip",argv);
+}
+...
+```
+
+Setelah ekstraksi dilakukan, maka akan dibuat file daftar.txt untuk di isi nantinya dengan list file yang emiliki ekstensi .txt. Hal ini dilakukan sangat mirip seperti proses ekstraksi diatas.
+
+```c
+...
+child_id = fork();
+if(child_id==0)
+{
+    execlp("touch","touch","daftar.txt",NULL);
+}
+...
+```
+Sekarang, kita butuh list file yang memiliki ekstensi .txt. Tentunya hal ini dilakukan dengan bantuan program ls, tetapi untuk mendapatkan output dari ls dari proses ls ke proses yang sekarang akan dibutuhkan pembuatan pipe. Untuk membuat pipe yang mengalir dari child ke parent, maka :
+```c
+...
+int fd[2];
+pipe(fd);
+child_id=fork();
+if(child_id==0)
+{
+    close(fd[0]);
+    dup2(fd[1],1);
+    ...
+}
+else
+{
+    close(fd[1]);
+    ...
+}
+```
+proses diatas akan membuat sebuah pipe satu arah yang mengalirkan data dari standard output dari child ke parent. Child lalu akan mengeksekusi program ls yang akan outputnya akan di proses oleh parent.
+
+Untuk memudahkan proses pembacaan dari pipe, pipe pertama-tama dibuatkan dulu streamnya seperti ini :
+```c
+FILE* pipa=fdopen(fd[0],"r");
+```
+setelah itu maka bisa dilakukan *fgets()* ke stream pipa :
+```c
+while(fgets(buffer,sizeof(buffer),pipa)!=NULL)
+```
+loop diatas akan berhenti saat sudah tidak ada string yang bisa dibaca lagi dari stream pipa.
+
+Setelah itu dideteksi file yang memiliki ekstensi .txt dengan menggunakan *strcmp()*, *strlen()* dan manipulasi string. Jika file tersebut benar memiliki ekstensi, maka akan tulis nama file tersebut di file daftar.txt yang telah dibuat.
+```c
+if(strcmp(&buffer[strlen(buffer)-4],".txt")==0)
+{
+    fprintf(berkas,"%s",buffer);
+}
+```
+Variabel berkas diatas adalah stream yang menunjuk ke file "daftar.txt".
 
 ---
 
