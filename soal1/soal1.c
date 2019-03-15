@@ -69,28 +69,26 @@ int main() {
     dir=opendir(".");
     if (dir != NULL) {
         while((ent = readdir(dir)) != NULL) {
-                memset(old,0,sizeof old);
-                memset(new,0,sizeof new);
-                strcpy(old,ent->d_name);
-                ptr = strstr(&old[strlen(old)-5],".png");
-                if (ptr != NULL) {
-                    strncpy(new,old,(strlen(old)-4));
-                    strcat(new,"_grey.png");
-                    rename(old,new);
-                    child_id=fork();
-                    if (child_id == 0) 
-                    {
-                        // this is child
-                        char *argv[4] = {"mv", new, "/home/bonnis/modul2/gambar", NULL};
-                        execv("/bin/mv", argv);
-                    } 
-                    else 
-                    {
-                        while ((wait(&status)) > 0);
-                    }
-                } else {
-                    continue;
-                }
+          memset(old,0,sizeof old);
+          memset(new,0,sizeof new);
+          strcpy(old,ent->d_name);
+            if (strcmp(&old[strlen(old)-4],".png")==0) {
+              strncpy(new,old,(strlen(old)-4));
+              strcat(new,"_grey.png");
+              rename(old,new);
+              child_id=fork();
+              if (child_id == 0) 
+              {
+                  char *argv[4] = {"mv", new, "/home/bonnis/modul2/gambar", NULL};
+                  execv("/bin/mv", argv);
+              } 
+              else 
+              {
+                  while ((wait(&status)) > 0);
+              }
+          } else {
+              continue;
+          }
         }
             closedir(dir);
     }
