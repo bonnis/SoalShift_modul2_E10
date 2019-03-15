@@ -61,9 +61,36 @@ Daemon ini akan otomatis melakukan setiap operasi diatas setiap 15 detik sekali.
 Pada suatu hari Kusuma dicampakkan oleh Elen karena Elen dimenangkan oleh orang lain. Semua kenangan tentang Elen berada pada file bernama “elen.ku”pada direktori “hatiku”. Karena sedih berkepanjangan, tugas kalian sebagai teman Kusuma adalah membantunya untuk menghapus semua kenangan tentang Elen dengan membuat program C yang bisa mendeteksi owner dan group dan menghapus file “elen.ku” setiap 3 detik dengan syarat ketika owner dan grupnya menjadi “www-data”. Ternyata kamu memiliki kendala karena permission pada file “elen.ku”. Jadi, ubahlah permissionnya menjadi 777. Setelah kenangan tentang Elen terhapus, maka Kusuma bisa move on.
 Catatan: Tidak boleh menggunakan crontab
 ### Jawab
+Karena program ini akan terus dijalankan dengan selang waktu 3 detik, maka hal pertama yang perlu dilakukan adalah membuat daemon. Cara membuat daemon dilakukan sama dengan soal nomor 1. 
+Kemudian buat child proses menggunakan fork untuk mengubah permission file elen.ku menjadi 777.
+```c
+child_id = fork();
+  
+    if (child_id == 0){
 
----
+      char *argv[4] = {"chmod", "777", "elen.ku", NULL};
+      execv("/bin/chmod", argv);
+    }
+```
 
+Kemudian pada parent proses akan menjalankan program untuk mendapatkan group id dan owner id.
+```c
+char path[] = "/home/nitama/shift2/hatiku/elen.ku";
+      struct stat statRes;
+      
+      stat(path, &statRes);
+      struct group *grp;
+      struct passwd *pwd;
+
+      grp = getgrgid(statRes.st_uid);
+      pwd = getpwuid(statRes.st_gid);
+```
+
+Kemudian dibuat suatu kondisi dimana jika group dan owner merupakan "www-data", maka file bernama elen.ku akan dihapus.
+```c
+if(strcmp(grp->gr_name, "www-data")==0 && strcmp(pwd->pw_name, "www-data")==0){
+        remove("/home/nitama/shift2/hatiku/elen.ku");
+```
 ## Nomor 3
 ### Soal
 Diberikan file campur2.zip. Di dalam file tersebut terdapat folder “campur2”. 
@@ -157,8 +184,29 @@ Catatan:
 
 
 ### Jawab
+Program ini akan berjalan setiap 5 detik, sehingga hal pertama yang dilakukan yaitu membuat daemon.
+Kemudian program ini akan mendeteksi ketika file "makan_enak.txt" diakses, maka dibuatlah program sebagai berikut
+```c
+char path[] = "/home/nitama/Documents/makanan/makan_enak.txt";
+   struct stat statRes;
+   time_t waktu; time(&waktu); ctime(&waktu);
+   int number=1;
+   stat(path, &statRes);
+```
 
----
+Dari program diatas, maka perlu dicari selisih antara waktu akses terakhir dengan waktu sekarang.
+```c
+double selisih = difftime(waktu, statRes.st_atime);
+```
+
+Kemudia buat kondisi dimana jika selisih antara waktu sekarang dan waktu akses terakhir kurang dari atau sama dengan 30, maka akan membuat file berekstensi .txt dengan nama "makan_sehat" dan diikuti angka integer. Angka ini akan bertambah sesuai dengan jumlah file dibuka.
+```c
+sprintf(tittle, "makan_sehat%d.txt", number);
+
+      char *argv[] = {"touch", tittle, NULL};
+      execv("/usr/bin/touch", argv);
+      number++;
+```
 
 ## Nomor 5
 ### Soal
