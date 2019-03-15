@@ -177,5 +177,66 @@ NB: Dilarang menggunakan crontab dan tidak memakai argumen ketika menjalankan pr
 
 ### Jawab
 
+Karena program ini akan berjalan terus menerus, maka program ini akan dibuat sebagai Daemon. Cara pembuatan Daemon sama persis seperti nomor 1. Langkah pertama yang diakukan setelah membuat Daemon adalah membuat folder pertama. Yang menjadi masalah disini tentunya adalah penamaan foldernya yang harus sesuai dengan format dd:MM:yyy-hh:mm. Untuk memecahkan masalah ini maka digunakan :
+```c
+time_t t = time(NULL);
+struct tm tm = *localtime(&t);
+```
+variabel tm berisi atribut-atribut yang kita butuhkan untuk menghasilkan format tersebut. Lalu kita buat formatnya dengan menggunakan fungsi *snprintf()* untuk memasukkan format tersebut ke dalam array of char(string).
+```c
+snprintf(wkt, sizeof wkt, "%02d:%02d:%04d-%02d:%02d",tm.tm_mday,tm.tm_mon+1,tm.tm_year+1900,tm.tm_hour,tm.tm_min);
+```
+Setelah mendapatkan nama folder tersebut, append kan namanya ke direktori log(/home/\[user]/log).
+```c
+strcat(dir,wkt);
+```
+Setelah itu, langsung saja jadikan variabel dir tersebut menjadi sebuah argumen dari mkdir dan jalankan mkdir menggunakan fork. Setelah dibuat folder awal nya untuk pertama kali, maka  akan masuk ke loop daemonnya.
+
+Di program ini, loop Daemonnya akan mengulang tiap 60 detik, dibuat juga sebuah variabel i untuk menghitung menit yang di increment setiap satu loop selesai. Di setiap loop, akan dibuat log#i.log dengan mengcopy syslog ke dalam folder yang telah dibuat
+```c
+if(fork()==0)
+{
+    char log[15];
+    snprintf(log, sizeof log, "/log%d.log", i);
+    strcat(dir,log);
+    execlp("cp", "cp", "/var/log/syslog", dir, NULL);
+}
+```
+Tetapi, hal ini belum membuat folder baru tiap 30 menit, maka diatas dari kode diatas diberi sebuah persyaratan jika variabel i>=31 dia akan membuat sebuah folder baru, caranya mirip mirip dengan pembuatan folder pertama.
+```c
+if(i>=31 || !rek)
+{
+    i=1;
+    t=time(NULL);
+    tm=*localtime(&t);
+    memset(dir,0,sizeof(dir));
+    strcpy(dir,"/home/bonnis/log/");
+    snprintf(wkt, sizeof wkt, "%02d:%02d:%04d-%02d:%02d",tm.tm_mday,tm.tm_mon+1,tm.tm_year+1900,tm.tm_hour,tm.tm_min);
+    strcat(dir,wkt);
+    if(fork()==0)
+    {
+        execlp("mkdir","mkdir","-p",dir,NULL);
+    }
+    else
+    {
+        while(wait(&status)>0);
+    }
+}
+```
+Variabel *rek* diatas adalah sebuah DIR* yang berfungsi untuk mengecek ada apa tidaknya folder yang lama, jika folder yang lama hilang, maka akan dibuat folder baru.
+
+Untuk poin b, awalnya saya mengerjakan dengan membuat program pendek melakukan exec pkill. Tetapi karena ada kemungkinan nama programnya di rename, terpikir untuk mengkill programnya langsung dari PID nya. Cara yang saya dapat adalah dengan membuat proses utama membuat sebuah program untuk mengkill dirinya sendiri. Program yang dibuat akan melakukan kill terhadap pid proses utama, pid ini didapat dari proses utama itu sendiri.
+```c
+FILE* stop = fopen("Soal5b.c","w");
+fprintf(stop,"#include <unistd.h>\n#include <sys/wait.h>\nint main(){int dump;if(fork()==0)execlp(\"kill\",\"kill\",\"%d\",NULL);else{while(wait(&dump)>0);}execlp(\"rm\",\"rm\",\"kill5b.out\",NULL);}",getpid());
+fclose(stop);
+if(fork()==0)
+{
+    execlp("gcc", "gcc", "Soal5b.c", "-o", "kill5b.out", NULL);
+}
+```
+Karena pid yang sudah di kill bisa dipakai oleh proses lain, untuk menghindari salah mengkill karena programnya secara tidak sengaja di eksekusi, program C yang mengkill otomatis mendelete dirinya sendiri.
+
+
 ---
 
