@@ -194,18 +194,20 @@ char path[] = "/home/nitama/Documents/makanan/makan_enak.txt";
    stat(path, &statRes);
 ```
 
-Dari program diatas, maka perlu dicari selisih antara waktu akses terakhir dengan waktu sekarang.
+Dari program diatas, maka kita dapatkan waktu terakhir akses file dan waktu sekarang. Kemudian cari selisih untuk menentukan langkah selanjutnya.
 ```c
 double selisih = difftime(waktu, statRes.st_atime);
 ```
 
-Kemudia buat kondisi dimana jika selisih antara waktu sekarang dan waktu akses terakhir kurang dari atau sama dengan 30, maka akan membuat file berekstensi .txt dengan nama "makan_sehat" dan diikuti angka integer. Angka ini akan bertambah sesuai dengan jumlah file dibuka.
+Kemudian buat kondisi dimana jika selisih antara waktu sekarang dan waktu akses terakhir kurang dari atau sama dengan 30, maka akan membuat file berekstensi .txt dengan nama "makan_sehat" dan diikuti angka bertipe integer. Angka ini akan bertambah sesuai dengan jumlah file yang dibuat.
 ```c
-sprintf(tittle, "makan_sehat%d.txt", number);
+while (selisih <= 30.0){
+  sprintf(tittle, "makan_sehat%d.txt", number);
 
-      char *argv[] = {"touch", tittle, NULL};
-      execv("/usr/bin/touch", argv);
-      number++;
+  char *argv[] = {"touch", tittle, NULL};
+  execv("/usr/bin/touch", argv);
+  number++;
+}
 ```
 
 ## Nomor 5
