@@ -39,21 +39,23 @@ int main() {
   close(STDOUT_FILENO);
   close(STDERR_FILENO);
 
+  number=1;
   while(1) {
-   char path[] = "/home/nitama/Documents/makanan/makan_enak.txt";
+   char path[] = "/home/bonnis/Documents/makanan/makan_enak.txt";
    struct stat statRes;
-   time_t waktu; time(&waktu); ctime(&waktu);
-   int number=1;
+   time_t waktu; time(&waktu);
    stat(path, &statRes);
 
    double selisih = difftime(waktu, statRes.st_atime);
    char tittle[100];
 
-while (selisih <= 30.0){
+    if (selisih <= 30.0){
       sprintf(tittle, "makan_sehat%d.txt", number);
-
-      char *argv[] = {"touch", tittle, NULL};
-      execv("/usr/bin/touch", argv);
+      if(fork()==0)
+      {
+        char *argv[] = {"touch", tittle, NULL};
+        execv("/usr/bin/touch", argv);
+      }
       number++;
     }
     sleep(5);
